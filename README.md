@@ -53,10 +53,10 @@ Example:
 
 # Timeline
 ## Setup
-I started out with downloading a virtual machine, but ended upon multiple bluescreens, thanks to my Windows installation.. After disabling hyper-v I needed to re-install virtualbox which seemed to fix this problem.
+We started out with downloading a virtual machine, but ended upon multiple bluescreens, thanks to my Windows installation.. After disabling Hyper-V we needed to re-install virtualbox in order to fix this problem.
 
 [Vagrant](http://vagrantup.com) is used to quickly setup virtual machine environments.
-I use a vagrant box configured by blu3wing in order to get the framework running. This is basically a linux environment with the right python version & dependencies installed, in order to run volatility.
+We use a vagrant box configured by blu3wing in order to get the framework running. This is basically a linux environment with the right python version & dependencies installed, in order to run volatility.
 
 Get vagrant running by creating a *Vagrantfile*:
 ```bash
@@ -93,12 +93,20 @@ How do we analyze the memory to get the e-mail addresses?  A widely used plugin 
 However, we can still use Regular Expressions to search for e-mail addresses. The downside of this is that we need to dump the whole process, and run an exhaustive RegEx search on this.  We can further divide this problem in subtasks:
 
 1. Process dumping (either to memory or to a file)
-2. Searching a dump for E-mails
+2. Searching a dump (for e-mails)
 
 
 #### Process dumping
-Let's dive deeper into the process dumping itself. We look at *volatility/plugins/procdump.py* in order to figure out how to dump the process and keep it in memory instead dumping to a file. 
-Below we see how *procdump* handles writing memory to a file:
+Before we can dump a process, we need to find its memory location. To do this, we can use another plugin that has already been developed: *linux_pslist*! 
+
+A problem where we were stuck on, was on how to call another plugin from your own. In some plugins, *unified_output* did still do some calculations (which should not be used like that!), but we found it hard to understand how Volatility's *TreeGrid* generator worked. Luckily, the *linux_pslist* plugin did only do their calculations in the *calculate* function.
+We found out that by just importing the desired plugin and then calling its *calculate* function will return the variables I need! See below:
+```python
+tasks = linux_pslist.linux_pslist(self._config).calculate()
+```
+
+Now that we got the processes in a variable, let's dive deeper into the process dumping itself. We look at *volatility/plugins/procdump.py* in order to figure out how to dump a process and keep it in memory instead dumping to a file. 
+Below we see how *procdump.py* handles writing memory to a file:
 ```python
 file_path = linux_common.write_elf_file(self._config.DUMP_DIR, task, task.mm.start_code)
 ```
@@ -118,5 +126,8 @@ def write_elf_file(dump_dir, task, elf_addr):
 	return file_path
 ```
 This gives us the information that the *task* struct contains the *get_elf* function, which would represent the contents of the file. We can directly use this function to grab a dump of the process!
+
+#### Searching a dump
+For debugging purposes, we wanted to know how many 
 
 ### API Calling
