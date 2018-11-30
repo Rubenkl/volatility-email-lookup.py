@@ -89,6 +89,34 @@ python vol.py --info
 The objective is to search the memory dump (or a process) for e-mail addresses, and send the results to an API. We separate this into two tasks: memory search & API Calling.
 
 ### Memory search
-How do we analyze the memory to get the e-mail addresses? We can use Regular expressions, but this would still cause us to try to search the whole memory manually. Another widely used plugin to find malware samples is the YARA-scan
+How do we analyze the memory to get the e-mail addresses?  A widely used plugin to find malware samples is the YARA scan. YARA scans the memory in 1MB chunks for predefined patterns. In our case, we can't really use YARA scan, as the character match would only be the symbol  `@`. 
+However, we can still use Regular Expressions to search for e-mail addresses. The downside of this is that we need to dump the whole process, and run an exhaustive RegEx search on this.  We can further divide this problem in subtasks:
+
+1. Process dumping (either to memory or to a file)
+2. Searching a dump for E-mails
+
+
+#### Process dumping
+Let's dive deeper into the process dumping itself. We look at *volatility/plugins/procdump.py* in order to figure out how to dump the process and keep it in memory instead dumping to a file. 
+Below we see how *procdump* handles writing memory to a file:
+```python
+file_path = linux_common.write_elf_file(self._config.DUMP_DIR, task, task.mm.start_code)
+```
+When we continue to investigate how the *write_elf_file* function works, we stumble upon this (in *volatility/common.py*):
+```python
+def write_elf_file(dump_dir, task, elf_addr):
+	file_name = re.sub("[./\\\]", "", str(task.comm))
+	
+	file_path = os.path.join(dump_dir, "%s.%d.%#8x" % (file_name, task.pid, elf_addr))
+	
+	file_contents = task.get_elf(elf_addr)
+	
+	fd = open(file_path, "wb")
+	fd.write(file_contents)
+	fd.close()
+	
+	return file_path
+```
+This gives us the information that the *task* struct contains the *get_elf* function, which would represent the contents of the file. We can directly use this function to grab a dump of the process!
 
 ### API Calling
