@@ -111,6 +111,7 @@ Below we see how *procdump.py* handles writing memory to a file:
 file_path = linux_common.write_elf_file(self._config.DUMP_DIR, task, task.mm.start_code)
 ```
 When we continue to investigate how the *write_elf_file* function works, we stumble upon this (in *volatility/common.py*):
+
 ```python
 def write_elf_file(dump_dir, task, elf_addr):
 	file_name = re.sub("[./\\\]", "", str(task.comm))
@@ -128,6 +129,22 @@ def write_elf_file(dump_dir, task, elf_addr):
 This gives us the information that the *task* struct contains the *get_elf* function, which would represent the contents of the file. We can directly use this function to grab a dump of the process!
 
 #### Searching a dump
-For debugging purposes, we wanted to know how many 
+For debugging purposes, we wanted to know how some interesting strings looked like. We define interesting strings to be strings with at least 4 characters.  Function to convert binary to interesting strings:
+```python
+def binaryToString(self, content):
+    #print all elements that have at least 4 characters
+    contentMatch = re.findall("[^\x00-\x1F\x7F-\xFF]{4,}", content)
+    flatten = " ".join(str(x) for x in contentMatch)
+    return flatten
+```
+Then the only thing remaining is finding e-mails from all those strings. We got the Regular Expression pattern from [here](https://www.tutorialspoint.com/python/python_extract_emails_from_text.htm). 
+```python
+def emailSearch(self, rawStrings):
+    # Regex pattern to grab substring emails from a string
+    # Copyright: https://www.tutorialspoint.com/python/python_extract_emails_from_text.htm
+    pattern = r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+"
+    return re.findall(pattern, rawStrings)
+```
+
 
 ### API Calling
