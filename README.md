@@ -1,19 +1,17 @@
-# Process E-mail Grabber
+# Linux Process E-mail Grabber
 ## About
 Developed by Ruben Kluge for the Memory Forensics course at LSU.
-*ps_email_lookup.py*
+*ps_email_lookup.py* --> *linux_ps_email_lookup.py* 
 
 ## Why use this plugin?
-This plugin can be used to determine e-mail age, by matching it to the database of [HaveIBeenPwned](https://haveibeenpwned.com/).
+This plugin can be used to scan memory for e-mail addresses, and determine e-mail age by matching it to the database of [HaveIBeenPwned](https://haveibeenpwned.com/).
 This can be useful, as some malware could send details of keyloggers, etc. to a particular e-mail. Indications of no breaches could possibly determine the usage of an e-mail address.
 
 ## Usage
 1.  Unpack the ZIP file and put the .py files in a directory.
     
 2.  install the python dependency ratelimit via the commandline using pip:  
-    `pip install ratelimit  `
-    or in case of the Vagrant box use sudo:  
-   `sudo pip install ratelimit`
+    `pip install ratelimit`
     
 3.  Specify the plugin directory with `--plugin=[PATH]`
     
@@ -26,6 +24,14 @@ Example:
 ```bash
 python vol.py --plugins=/vagrant/plugin  --profile=LinuxXubuntu1404x64 -f /vagrant/NILES.lime ps_email_lookup -D /vagrant/dump
 ```
+Output:
+```bash
+Volatility Foundation Volatility Framework 2.6
+PID 	E-mail 						Date 			Breaches
+4256 	bash-maintainers@gnu.org 	2017-08-28 		2
+```
+
+
 ### Parameters
 ### -D 
 Directory to dump the process in.
@@ -45,8 +51,8 @@ Example:
 
 
 
-## Timeline
-### Setup
+# Timeline
+## Setup
 I started out with downloading a virtual machine, but ended upon multiple bluescreens, thanks to my Windows installation.. After disabling hyper-v I needed to re-install virtualbox which seemed to fix this problem.
 
 [Vagrant](http://vagrantup.com) is used to quickly setup virtual machine environments.
@@ -79,5 +85,10 @@ Now that we are SSHd into the box, we can test it by going into the installation
 cd /opt/volatility #<-- Location of Volatility
 python vol.py --info
 ```
-### Development
+## Development
+The objective is to search the memory dump (or a process) for e-mail addresses, and send the results to an API. We separate this into two tasks: memory search & API Calling.
 
+### Memory search
+How do we analyze the memory to get the e-mail addresses? We can use Regular expressions, but this would still cause us to try to search the whole memory manually. Another widely used plugin to find malware samples is the YARA-scan
+
+### API Calling
