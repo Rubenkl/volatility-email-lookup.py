@@ -148,3 +148,32 @@ def emailSearch(self, rawStrings):
 
 
 ### API Calling
+The last part is about calling the [HaveIBeenPwned](https://haveibeenpwned.com/) API to check for breached e-mails. We made sure to strictly enforce API limits by integrating the [ratelimit
+](https://pypi.org/project/ratelimit/) plugin by Tomas Basham (make sure to install this first!). The API is limited to one request every 2 second, so we set this up with prepending:
+```python
+@sleep_and_retry
+@limits(calls=1, period=2)
+def lookupBreachAPI(self, email):
+    ...
+```
+Using *requests* we can call the API for results regarding an e-mailaddress. If there is no entry, we get a 404 HTTP status code.
+If the e-mail does exist in their database, we get a response like this (in JSON):
+```json
+[ { 
+...
+"Domain":"adobe.com", 
+"BreachDate":"2013-10-04",
+...
+} ]
+```
+We collect all the breach dates (*BreachDate*), and try to sort them by date in ascending order. We wrote a function to sort the date by year, month and day:
+```python
+def dateSort(self, apiObject):
+    splits = apiObject['BreachDate'].split('-')
+    return splits[0], splits[1], splits[2]
+```
+By replacing the breaches with a sorted version, we now have them ordered:
+```python
+breaches = sorted(breaches, key=self.dateSort)
+```
+
