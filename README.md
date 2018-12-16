@@ -1,6 +1,7 @@
 # Linux Process E-mail Grabber
 ## About
 Developed by Ruben Kluge for the Memory Forensics course at LSU.
+
 *ps_email_lookup.py* --> *linux_ps_email_lookup.py* 
 
 ## Why use this plugin?
